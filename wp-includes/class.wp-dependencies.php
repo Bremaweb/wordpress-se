@@ -233,9 +233,48 @@ class WP_Dependencies {
 		if ( isset( $this->registered[ $handle ] ) ) {
 			return false;
 		}
+
+		$this->cache_src($src);
+
 		$this->registered[ $handle ] = new _WP_Dependency( $handle, $src, $deps, $ver, $args );
 		return true;
 	}
+
+    /**
+     * Cache an item
+     *
+     * Makes a copy of the item in the public_html folder so it's accessible to the browser
+     * @param string $src
+     */
+    private function cache_src($src){
+        if ( empty($src) ){
+            return;
+        }
+
+        if ( filter_var($src, FILTER_VALIDATE_URL) ){
+            $siteUrl = get_site_url();
+            if ( stripos($src, $siteUrl) !== false ){
+                $src = str_replace($siteUrl, "", $src);
+            } else {
+                // it's a URL outside of our domain
+                return;
+            }
+        }
+
+        $srcLocation = ABSPATH . ltrim($src, "/");
+        $newLocation = ABSPATH . 'public_html' . $src;
+
+        if ( file_exists($srcLocation) ){
+            if ( !file_exists($newLocation) ){
+                if ( !file_exists(dirname($newLocation)) ){
+                    mkdir(dirname($newLocation), 0755, true);
+                }
+
+                copy($srcLocation, $newLocation);
+
+            }
+        }
+    }
 
 	/**
 	 * Add extra item data.
